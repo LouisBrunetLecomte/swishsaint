@@ -152,12 +152,18 @@ ALL_SOURCES=("${OFFICIAL_TESTS[@]}" Tests/Fork/*.swift "${OFFICIAL_SOURCES[@]}" 
     done
     printf '\n}\n'
 } > "$OBJECTS/output-file-map.json"
+# Codec GIF de l'enregistreur (C) : compilé comme dans build.sh, pour les tests officiels qui l'importent.
+GIF_OBJECTS=("$OBJECTS/RecorderGIFCodec.o" "$OBJECTS/cgif_raw.o")
+xcrun clang -O3 -std=c99 -target arm64-apple-macosx14.0 -isysroot "$SDK" \
+    -c Sources/RecorderGIFCodec/RecorderGIFCodec.c -o "${GIF_OBJECTS[0]}"
+xcrun clang -O3 -std=c99 -target arm64-apple-macosx14.0 -isysroot "$SDK" \
+    -c Sources/RecorderGIFCodec/vendor/cgif/cgif_raw.c -o "${GIF_OBJECTS[1]}"
 note "Compilation des tests du fork…"
 swiftc -Onone -incremental -enable-batch-mode -j "$(sysctl -n hw.logicalcpu)" -module-name VorssaintTests \
     -output-file-map "$OBJECTS/output-file-map.json" \
     -target arm64-apple-macosx14.0 -sdk "$SDK" ${SDK_COMPAT_FLAGS[@]+"${SDK_COMPAT_FLAGS[@]}"} \
-    -I Sources/VMStatisticsCompat \
-    "${ALL_SOURCES[@]}" -o build/fork-tests
+    -I Sources/VMStatisticsCompat -I Sources/CoreAudioTapCompat -I Sources/RecorderGIFCodec \
+    "${ALL_SOURCES[@]}" "${GIF_OBJECTS[@]}" -o build/fork-tests
 status=0
 ./build/fork-tests "$@" || status=$?
 # Les suites UserDefaults laissent des plists vides : même ménage que build.sh.

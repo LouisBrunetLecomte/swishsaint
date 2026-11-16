@@ -171,9 +171,14 @@ enum ForkDefaultsTests {
         defaults.removePersistentDomain(forName: name)
 
         let service = source("Sources/Vorssaint/Services/SettingsBackup.swift")
-        suite.expect(service.contains("try data.write(to: url, options: .atomic)\n            ForkBackup.addForkSettings(toBackupAt: url) // FORK(backup)")
-                        && service.contains("static func readSettings(at url: URL) -> [String: Any]? {\n        ForkBackup.rememberForkSettings(inBackupAt: url) // FORK(backup)")
-                        && service.contains("ForkBackup.applyRememberedForkSettings() // FORK(backup)\n    }"),
+        // The official tests extract write(to:), readSettings(at:) and apply(settings:):
+        // the seams live in their callers (export panel, import panel, relaunch, CLI).
+        suite.expect(service.contains("return write(to: url) && ForkBackup.addForkSettings(toBackupAt: url) // FORK(backup)")
+                        && service.contains("return panel.url.map(ForkBackup.rememberingForkSettings(inBackupAt:)) // FORK(backup)")
+                        && service.contains("apply(settings: settings)\n        ForkBackup.applyRememberedForkSettings() // FORK(backup)\n        FeatureRuntime.shared.relaunchApp()")
+                        && service.contains("ForkBackup.addForkSettings(toBackupAt: URL(fileURLWithPath: path)) // FORK(backup)")
+                        && service.contains("readSettings(at: ForkBackup.rememberingForkSettings(inBackupAt: URL(fileURLWithPath: path)))")
+                        && service.contains("apply(settings: settings)\n            ForkBackup.applyRememberedForkSettings() // FORK(backup)"),
                      "export adds the fork settings to the file, import reads and applies them before relaunching (seam backup)")
     }
 

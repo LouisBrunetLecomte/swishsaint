@@ -11,6 +11,13 @@ enum ForkBootstrap {
     /// before any view or service reads them.
     static func start() {
         ForkDefaults.register()
+        // Hooks the official code calls without naming fork types, so its
+        // tests (which extract those functions) compile without the fork.
+        NotchNotice.forkActivate = { notice in // seam notch-notice-activate
+            ForkDictationIsland.activate(notice) || ForkMeetingIsland.activate(notice)
+                || ForkMacBackupIsland.activate(notice) || ForkGlanceIsland.activate(notice)
+        }
+        SettingsDirectoryItem.forkSections = { ForkSettingsPages.sections($0, language: $1) } // seam settings3
         ForkNotchDictations.start()
         ForkMeetingIslandStrip.start()
         ForkMeetingIslandSection.start()

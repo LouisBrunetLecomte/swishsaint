@@ -69,13 +69,22 @@ enum ForkBackup {
     private static var remembered: [String: Any]?
 
     /// After the official export wrote the file.
-    static func addForkSettings(toBackupAt url: URL) {
+    /// Always true: a fork-only failure never turns a saved official backup into a failed export.
+    @discardableResult
+    static func addForkSettings(toBackupAt url: URL) -> Bool {
         guard let data = try? Data(contentsOf: url),
               let payload = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
               let updated = try? PropertyListSerialization.data(
                 fromPropertyList: adding(currentSettings(), to: payload), format: .xml, options: 0)
-        else { return }
+        else { return true }
         try? updated.write(to: url, options: .atomic)
+        return true
+    }
+
+    /// Same as rememberForkSettings, returning the URL so the seam stays a single expression.
+    static func rememberingForkSettings(inBackupAt url: URL) -> URL {
+        rememberForkSettings(inBackupAt: url)
+        return url
     }
 
     /// When the official import reads the file.
