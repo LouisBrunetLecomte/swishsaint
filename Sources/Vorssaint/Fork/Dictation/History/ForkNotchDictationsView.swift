@@ -37,6 +37,10 @@ struct ForkNotchDictationsView: View {
     @State private var closing: (id: UUID, task: Task<Void, Never>)?
     @State private var keyExpandedID: UUID?
     @State private var keysMoved = false
+    /// The dictation shown whole (« Voir plus »): one at a time.
+    @State private var wholeID: UUID?
+    /// Asks the list to show the card that just grew, whole.
+    @State private var wholeReveal: UUID?
     @Environment(\.notchSettingsPreview) private var preview
     @Environment(\.notchGlassSurface) private var glassSurface
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -105,6 +109,14 @@ struct ForkNotchDictationsView: View {
                         guard let id else { return }
                         follow(id, from: previous, in: proxy)
                     }
+                    .onChange(of: wholeReveal) { _, id in
+                        guard let id else { return }
+                        wholeReveal = nil
+                        // Once the card has its new height: the least scroll that shows it whole.
+                        DispatchQueue.main.async {
+                            withAnimation(reduceMotion ? nil : Self.wholeAnimation) { proxy.scrollTo(id) }
+                        }
+                    }
                 }
             }
         }
@@ -143,11 +155,8 @@ struct ForkNotchDictationsView: View {
         .onChange(of: state.focus) { _, _ in if !preview, let id = state.takeFocus() { reveal(id) } }
         .onChange(of: service.clipboardSearchRequest) { _, _ in if !preview, !inWindow { openSearch() } }
         .onChange(of: pinnedOnly) { _, _ in highlightedID = searchHighlight(keeping: nil) }
-        .onChange(of: searchOpen) { _, open in
-            guard !preview, !inWindow else { return }
-            // Escape closes the search before it closes the island.
-            service.setPageLayer(.clipboard, close: open ? { closeSearch() } : nil)
-        }
+        .onChange(of: searchOpen) { _, _ in syncPageLayer() }
+        .onChange(of: wholeID) { _, _ in syncPageLayer() }
         .onChange(of: searching) { _, focused in
             // A field left empty has nothing to keep open.
             if !focused, query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { searchOpen = false }
@@ -236,11 +245,18 @@ struct ForkNotchDictationsView: View {
     }
 
     private func row(_ record: ForkDictationRecord, place: Int) -> some View {
-        let open = !comfortable && openedID == record.id
+        let whole = isWhole(record)
+        let open = !whole && !comfortable && openedID == record.id
         return card(record) {
-            if comfortable { expandedCard(record, place: place) } else { compactCard(record, place: place) }
+            if whole {
+                wholeCard(record, place: place)
+            } else if comfortable {
+                expandedCard(record, place: place)
+            } else {
+                compactCard(record, place: place)
+            }
         }
-        .frame(height: rowHeight)
+        .frame(height: whole ? wholeHeight(record) : rowHeight, alignment: .top)
         .accessibilityHidden(open)
         .overlay(alignment: .top) {
             if open { openCard(record, place: place) }
@@ -398,6 +414,11 @@ struct ForkNotchDictationsView: View {
                 if record.hasAudio {
                     Button(player.isPlaying(record.id) ? text.historyPause : text.historyPlay) { listen(record) }
                 }
+                if isWhole(record) {
+                    Button(text.historyShowLess) { setWhole(nil) }
+                } else if overflows(record) {
+                    Button(text.historyShowMore) { setWhole(record.id) }
+                }
                 Button(record.isPinned ? text.historyUnpin : text.historyPin) { state.togglePin(record) }
                 Button(text.historyDelete) { remove(record) }
             }
@@ -450,25 +471,149 @@ struct ForkNotchDictationsView: View {
             }
             .buttonStyle(NotchButtonStyle(lifts: false))
             .help(activateHelp)
-            HStack(spacing: 5) {
-                sourceBadge(record)
-                details(record)
-                Spacer(minLength: 0)
-                if let shortcut = ForkNotchDictationsSupport.shortcutLabel(place: place, hasKeyboard: hasKeyboard) {
-                    Text(shortcut)
-                        .font(.system(size: 9.5, weight: .medium)).monospacedDigit()
-                        .foregroundStyle(.tertiary)
-                        .accessibilityHidden(true)
-                }
-                if archive.retranscribing == record.id {
-                    retranscribing
-                } else {
-                    buttons(record, listens: true)
-                }
+            .overlay(alignment: .bottomTrailing) {
+                if overflows(record) { wholeToggle(record, whole: false) }
             }
-            .frame(height: 28)
+            detailsRow(record, place: place)
         }
         .padding(.horizontal, 10).padding(.top, 10).padding(.bottom, 4)
+    }
+
+    /// The dictation whole, as said, line breaks kept: its text selectable,
+    /// scrolling inside the card when it is longer than the list. A click
+    /// on it selects instead of pasting; Return, the menu and the buttons
+    /// still paste and copy.
+    private func wholeCard(_ record: ForkDictationRecord, place: Int) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ScrollView {
+                searchText(record.text, matching: searchTokens)
+                    .font(.system(size: 12))
+                    .multilineTextAlignment(.leading)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                    // Room under the last line for the button over it.
+                    .padding(.bottom, Self.wholeToggleHeight + 2)
+            }
+            .scrollIndicators(.automatic)
+            .frame(maxHeight: .infinity)
+            .overlay(alignment: .bottomTrailing) { wholeToggle(record, whole: true) }
+            detailsRow(record, place: place)
+        }
+        .padding(.horizontal, 10).padding(.top, 10).padding(.bottom, 4)
+        .transition(.opacity)
+    }
+
+    private static let wholeToggleHeight: CGFloat = 18
+    private static let wholeAnimation: Animation = .smooth(duration: 0.3)
+
+    /// « Voir plus » over the end of the last line shown, « Voir moins » in
+    /// the same corner once whole: the chevron turns as the card grows.
+    private func wholeToggle(_ record: ForkDictationRecord, whole: Bool) -> some View {
+        let title = whole ? text.historyShowLess : text.historyShowMore
+        return Button { setWhole(whole ? nil : record.id) } label: {
+            HStack(spacing: 3) {
+                Text(title)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 8, weight: .bold))
+                    .rotationEffect(.degrees(whole ? 180 : 0))
+            }
+            .font(.system(size: 10.5, weight: .medium))
+            .foregroundStyle(.white.opacity(0.9))
+            .padding(.horizontal, 8)
+            .frame(height: Self.wholeToggleHeight)
+            .background {
+                let capsule = Capsule(style: .continuous)
+                Group {
+                    if glassSurface { capsule.fill(.thickMaterial) } else { capsule.fill(Color(white: 0.17)) }
+                }
+                .overlay(capsule.strokeBorder(.white.opacity(0.12), lineWidth: 0.5))
+                .shadow(color: .black.opacity(0.35), radius: 4, y: 1)
+            }
+            .contentShape(Capsule())
+        }
+        .buttonStyle(NotchButtonStyle(cornerRadius: Self.wholeToggleHeight / 2, lifts: false))
+        .help(title)
+        .accessibilityLabel(title)
+    }
+
+    /// When, how long, which engine, the shortcut and the actions.
+    private func detailsRow(_ record: ForkDictationRecord, place: Int) -> some View {
+        HStack(spacing: 5) {
+            sourceBadge(record)
+            details(record)
+            Spacer(minLength: 0)
+            if let shortcut = ForkNotchDictationsSupport.shortcutLabel(place: place, hasKeyboard: hasKeyboard) {
+                Text(shortcut)
+                    .font(.system(size: 9.5, weight: .medium)).monospacedDigit()
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
+            if archive.retranscribing == record.id {
+                retranscribing
+            } else {
+                buttons(record, listens: true)
+            }
+        }
+        .frame(height: 28)
+    }
+
+    // MARK: Whole text (« Voir plus »)
+
+    private func isWhole(_ record: ForkDictationRecord) -> Bool {
+        wholeID == record.id && !ForkNotchDictationsSupport.isFailed(record)
+    }
+
+    /// The list's height under the search field, as `follow` counts it.
+    private var visibleListHeight: CGFloat {
+        size.height - (searchOpen ? NotchLayout.clipboardSearchHeight + NotchLayout.rowSpacing : 0)
+    }
+
+    private func wholeTextHeight(_ record: ForkDictationRecord) -> CGFloat {
+        ForkNotchDictationsTextMeasure.height(of: record.text, id: record.id, width: openTextWidth - 4)
+    }
+
+    /// Whether the card hides part of the dictation: more lines than it
+    /// shows, or text the card cuts before drawing it.
+    private func overflows(_ record: ForkDictationRecord) -> Bool {
+        guard !preview, !ForkNotchDictationsSupport.isFailed(record), !record.text.isEmpty else { return false }
+        let shownLines = comfortable ? 3 : NotchClipboardCardSize.maximumOpenLines
+        if !comfortable, record.text.count > openText(record).count { return true }
+        return ForkNotchDictationsWhole.overflows(textHeight: wholeTextHeight(record), shownLines: shownLines,
+                                                  lineHeight: ForkNotchDictationsTextMeasure.lineHeight)
+    }
+
+    private func wholeHeight(_ record: ForkDictationRecord) -> CGFloat {
+        ForkNotchDictationsWhole.height(textHeight: wholeTextHeight(record) + Self.wholeToggleHeight + 2,
+                                        closed: NotchLayout.clipboardCardHeight, visible: visibleListHeight)
+    }
+
+    /// Opens one dictation whole (closing the one before) or closes it,
+    /// with the card growing in place and the list following it.
+    private func setWhole(_ id: UUID?) {
+        guard !preview, wholeID != id else { return }
+        dwell?.task.cancel()
+        dwell = nil
+        withAnimation(reduceMotion ? nil : Self.wholeAnimation) {
+            expandedID = nil
+            keyExpandedID = nil
+            wholeID = id
+        }
+        if let id {
+            highlightedID = id
+            wholeReveal = id
+        }
+    }
+
+    /// Escape closes the whole card, then the search, before the island.
+    private func syncPageLayer() {
+        guard !preview, !inWindow else { return }
+        if wholeID != nil {
+            service.setPageLayer(.clipboard, close: { setWhole(nil) })
+        } else if searchOpen {
+            service.setPageLayer(.clipboard, close: { closeSearch() })
+        } else {
+            service.setPageLayer(.clipboard, close: nil)
+        }
     }
 
     /// When, how long and with which engine. A failure says why in the
@@ -588,7 +733,7 @@ struct ForkNotchDictationsView: View {
         if inWindow, !composing {
             let commandOnly = modifiers.intersection([.command, .control, .option, .shift]) == .command
             if keyCode == 53, modifiers.isDisjoint(with: [.command, .control, .option]) {
-                if searchOpen { closeSearch() } else { ForkNotchDictationsWindow.shared.hide() }
+                if wholeID != nil { setWhole(nil) } else if searchOpen { closeSearch() } else { ForkNotchDictationsWindow.shared.hide() }
                 return true
             }
             if let index = NotchClipboardPastePress.index(keyCode: keyCode, commandOnly: commandOnly) {
@@ -623,6 +768,18 @@ struct ForkNotchDictationsView: View {
             } else {
                 NSSound.beep()
             }
+            return true
+        case .showWhole(let show):
+            guard show else {
+                guard wholeID != nil else { return false }
+                setWhole(nil)
+                return true
+            }
+            guard let id = NotchSupport.clipboardPasteTarget(highlighted: highlightedID, in: ids),
+                  let record = entries.first(where: { $0.id == id }) else { return false }
+            if isWhole(record) { return true }
+            guard overflows(record) else { return false }
+            setWhole(id)
             return true
         }
     }
@@ -771,5 +928,29 @@ private enum ForkNotchDictationApps {
         let app = App(name: InstalledApps.name(for: bundleID), icon: NSWorkspace.shared.icon(forFile: url.path))
         cache[bundleID] = app
         return app
+    }
+}
+
+/// The height a dictation's text takes at the card's width, in the
+/// card's font: measured once per text and width.
+@MainActor
+enum ForkNotchDictationsTextMeasure {
+    private struct Key: Hashable { let id: UUID; let width: Int; let text: Int }
+    private static var cache: [Key: CGFloat] = [:]
+    private static let font = NSFont.systemFont(ofSize: 12)
+
+    static var lineHeight: CGFloat { NSLayoutManager().defaultLineHeight(for: font) }
+
+    static func height(of string: String, id: UUID, width: CGFloat) -> CGFloat {
+        let key = Key(id: id, width: Int(width.rounded()), text: string.hashValue)
+        if let known = cache[key] { return known }
+        if cache.count > 2_000 { cache.removeAll() }
+        let rect = (string as NSString).boundingRect(
+            with: NSSize(width: max(1, width), height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: [.font: font])
+        let height = rect.height.rounded(.up)
+        cache[key] = height
+        return height
     }
 }
