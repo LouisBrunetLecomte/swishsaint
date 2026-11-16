@@ -32,7 +32,7 @@ enum ForkDefaultsTests {
                                            ForkDefaultsKey.dictationShortcuts, ForkDefaultsKey.dictationEngine,
                                            ForkDefaultsKey.dictationMicrophone, ForkDefaultsKey.dictationAddsToHistory,
                                            ForkDefaultsKey.dictationFeedback, ForkDefaultsKey.dictationStopsOnSilence,
-                                           ForkDefaultsKey.dictationUnloadMinutes,
+                                           ForkDefaultsKey.dictationUnloadMinutes, ForkDefaultsKey.dictationMaxMinutes,
                                            ForkDefaultsKey.dictationKeepsHistory,
                                            ForkDefaultsKey.meetingsEnabled, ForkDefaultsKey.meetingsCaptureTarget,
                                            ForkDefaultsKey.meetingsSystemAudio, ForkDefaultsKey.meetingsMicrophone,

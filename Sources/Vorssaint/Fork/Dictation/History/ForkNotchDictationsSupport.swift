@@ -23,6 +23,27 @@ enum ForkNotchDictationsKey: Equatable {
     case clipboard(NotchClipboardKey)
     /// Plays or stops the highlighted dictation.
     case listen
+    /// → shows the highlighted dictation whole, ← brings it back to its card.
+    case showWhole(Bool)
+}
+
+/// How a dictation's card shows its text whole (« Voir plus »).
+enum ForkNotchDictationsWhole {
+    /// The card's top padding, the gap above the details row, the row and
+    /// the bottom padding, around the text.
+    static let chrome: CGFloat = 10 + 6 + 28 + 4
+
+    /// Whether the text takes more lines than the card shows.
+    static func overflows(textHeight: CGFloat, shownLines: Int, lineHeight: CGFloat) -> Bool {
+        textHeight > CGFloat(shownLines) * lineHeight + 1
+    }
+
+    /// The card grows to its text, never under its closed height nor over
+    /// the list: past that, the text scrolls inside the card.
+    static func height(textHeight: CGFloat, closed: CGFloat, visible: CGFloat) -> CGFloat {
+        let wanted = (textHeight + chrome).rounded(.up)
+        return min(max(closed, wanted), max(closed, visible))
+    }
 }
 
 /// What a click on Copy shows: the tick once the text is on the clipboard,
@@ -97,10 +118,15 @@ enum ForkNotchDictationsSupport {
                                                modifiers: modifiers, composing: composing) {
             return .clipboard(key)
         }
-        guard keyCode == 49, !composing,
+        guard !composing,
               modifiers.isDisjoint(with: [.command, .control, .option, .shift]),
               query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
-        return .listen
+        switch keyCode {
+        case 49: return .listen
+        // The arrows move the cursor of a search being typed, not the card.
+        case 123, 124: return .showWhole(keyCode == 124)
+        default: return nil
+        }
     }
 
     /// The dictations the tab lists: pinned first, then newest first; a

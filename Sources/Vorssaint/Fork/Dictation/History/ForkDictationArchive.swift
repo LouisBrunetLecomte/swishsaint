@@ -36,7 +36,6 @@ final class ForkDictationArchive: ObservableObject {
     private var retranscribeGeneration = 0
     private var retranscribeGuard: DispatchWorkItem?
     /// How long a transcription again may take before it is given up.
-    static let retranscribeTimeout: TimeInterval = 120
 
     init(directory: URL? = nil) {
         // Outside a real bundle (a test tool) there is no container: the
@@ -161,7 +160,7 @@ final class ForkDictationArchive: ObservableObject {
     /// or the automatic choice) and `language` (nil: the dictation's). The
     /// record takes the new text. One at a time; a dictation may run
     /// meanwhile, the engines keep the two apart. `completion` is called
-    /// once, at the latest after `retranscribeTimeout`.
+    /// once, at the latest after `ForkDictationSupport.retranscribeTimeout`.
     func retranscribe(_ id: UUID, engine setting: ForkDictationEngineSetting, language: String?,
                       completion: @escaping (Result<String, ForkDictationFailure>) -> Void) {
         precondition(Thread.isMainThread)
@@ -177,13 +176,15 @@ final class ForkDictationArchive: ObservableObject {
             self.endRetranscription()
             completion(result)
         }
+        let timeout = ForkDictationSupport.retranscribeTimeout(
+            duration: records.first { $0.id == id }?.duration ?? 0)
         let guardWork = DispatchWorkItem { [weak self] in
             ForkDictationEngines.shared.cancelHistoryTranscription()
-            self?.log.error("transcription again gave up after \(Self.retranscribeTimeout, format: .fixed(precision: 0)) s")
+            self?.log.error("transcription again gave up after \(timeout, format: .fixed(precision: 0)) s")
             finish(.failure(.transcriptionFailed))
         }
         retranscribeGuard = guardWork
-        DispatchQueue.main.asyncAfter(deadline: .now() + Self.retranscribeTimeout, execute: guardWork)
+        DispatchQueue.main.asyncAfter(deadline: .now() + timeout, execute: guardWork)
         loadSamples(id) { [weak self] samples in
             guard let self, self.retranscribeGeneration == generation else { return }
             guard let samples else { return finish(.failure(.transcriptionFailed)) }

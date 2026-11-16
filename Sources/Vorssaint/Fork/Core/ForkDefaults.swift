@@ -51,6 +51,7 @@ enum ForkDefaultsKey {
     static let dictationFeedback = "fork.dictation.feedback"
     /// Hands-free ends after a minute without a voice.
     static let dictationStopsOnSilence = "fork.dictation.stopsOnSilence"
+    static let dictationMaxMinutes = "fork.dictation.maxMinutes"
     /// Minutes before an unused Parakeet model leaves memory.
     static let dictationUnloadMinutes = "fork.dictation.unloadMinutes"
     /// Dictations are kept with their audio (a week) in the dictation
@@ -210,6 +211,7 @@ enum ForkDefaults {
         ForkDefaultsKey.dictationAddsToHistory: true,
         ForkDefaultsKey.dictationFeedback: "auto",
         ForkDefaultsKey.dictationStopsOnSilence: true,
+        ForkDefaultsKey.dictationMaxMinutes: ForkDictationSupport.defaultDurationMinutes,
         ForkDefaultsKey.dictationUnloadMinutes: 5,
         ForkDefaultsKey.dictationKeepsHistory: true,
         ForkDefaultsKey.meetingsEnabled: false,

@@ -831,6 +831,7 @@ private struct ForkDictationAfterSection: View {
     @AppStorage(ForkDefaultsKey.dictationSounds) private var sounds = true
     @AppStorage(ForkDefaultsKey.dictationFeedback) private var feedback = ForkDictationFeedbackSetting.auto.rawValue
     @AppStorage(ForkDefaultsKey.dictationStopsOnSilence) private var stopsOnSilence = true
+    @AppStorage(ForkDefaultsKey.dictationMaxMinutes) private var maxMinutes = ForkDictationSupport.defaultDurationMinutes
     @AppStorage(DefaultsKey.clipboardHistoryEnabled) private var clipboardHistoryEnabled = false
 
     private var historyIsOn: Bool {
@@ -866,10 +867,28 @@ private struct ForkDictationAfterSection: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
+                Picker(text.maxDurationTitle, selection: Binding(get: { currentMinutes }, set: { maxMinutes = $0 })) {
+                    // A value from elsewhere still shows, as the length it means.
+                    ForEach(choices, id: \.self) { minutes in
+                        Text(text.maxDurationMinutes(minutes)).tag(minutes)
+                    }
+                }
+                caption(text.maxDurationCaption)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
                 Toggle(text.stopsOnSilenceTitle, isOn: $stopsOnSilence)
                 caption(text.stopsOnSilenceCaption)
             }
         }
+    }
+
+    /// The length in effect, which the picker shows even for a stored value out of range.
+    private var currentMinutes: Int { Int(ForkDictationSupport.maximumDuration(minutes: maxMinutes) / 60) }
+
+    private var choices: [Int] {
+        let offered = ForkDictationSupport.durationChoices
+        return offered.contains(currentMinutes) ? offered : (offered + [currentMinutes]).sorted()
     }
 
     private func caption(_ string: String) -> some View {
