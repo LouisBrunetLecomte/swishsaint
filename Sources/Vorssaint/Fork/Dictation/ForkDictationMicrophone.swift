@@ -50,6 +50,8 @@ final class ForkDictationMicrophone: NSObject, @unchecked Sendable {
         let lock = NSLock()
         var generation = 0
         var samples: [Float] = []
+        /// The samples this dictation may keep, set at each start.
+        var limit = 0
         var peak: Float = 0
         var received = 0
         var levelSum: Float = 0
@@ -102,7 +104,9 @@ final class ForkDictationMicrophone: NSObject, @unchecked Sendable {
         shared.lock.withLock {
             shared.generation = generation
             shared.samples = []
-            shared.samples.reserveCapacity(Int(Self.sampleRate * ForkDictationSupport.maximumDuration))
+            let limit = ForkDictationSupport.maximumDuration
+            shared.limit = Int(Self.sampleRate * limit)
+            shared.samples.reserveCapacity(ForkDictationSupport.reservedSamples(sampleRate: Self.sampleRate, limit: limit))
             shared.peak = 0
             shared.received = 0
             shared.levelSum = 0
@@ -134,7 +138,7 @@ final class ForkDictationMicrophone: NSObject, @unchecked Sendable {
         guard isRunning else { return ([], 0, 0) }
         let (samples, peak) = detach { () -> ([Float], Float) in
             let result = (shared.samples, shared.peak)
-            // The reserved five minutes go back now, not at the next dictation.
+            // The buffer goes back now, not at the next dictation.
             shared.samples = []
             return result
         }
@@ -312,10 +316,9 @@ private final class CaptureSink: NSObject, AVCaptureAudioDataOutputSampleBufferD
         var sum: Float = 0
         for value in chunk { sum += value * value }
         let rms = (sum / Float(chunk.count)).squareRoot()
-        let limit = Int(ForkDictationMicrophone.sampleRate * ForkDictationSupport.maximumDuration)
         shared.lock.withLock {
             guard shared.generation == generation, let callbacks = shared.callbacks else { return }
-            let room = max(0, limit - shared.samples.count)
+            let room = max(0, shared.limit - shared.samples.count)
             if room > 0 { shared.samples.append(contentsOf: chunk.prefix(room)) }
             shared.received += chunk.count
             shared.peak = max(shared.peak, rms)

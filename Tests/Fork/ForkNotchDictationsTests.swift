@@ -13,6 +13,30 @@ enum ForkNotchDictationsTests {
         listing(suite)
         actions(suite)
         island(suite)
+        whole(suite)
+    }
+
+    private static func whole(_ suite: TestSuite) {
+        typealias Support = ForkNotchDictationsSupport
+        typealias Whole = ForkNotchDictationsWhole
+        let arrow = "\u{F703}"
+        suite.expect(Support.key(keyCode: 124, characters: arrow, modifiers: [.function, .numericPad], composing: false, query: "") == .showWhole(true)
+                        && Support.key(keyCode: 123, characters: arrow, modifiers: [.function, .numericPad], composing: false, query: "") == .showWhole(false),
+                     "→ shows the highlighted dictation whole, ← brings it back")
+        suite.expect(Support.key(keyCode: 124, characters: arrow, modifiers: [], composing: false, query: "bonjour") == nil
+                        && Support.key(keyCode: 123, characters: arrow, modifiers: [.shift], composing: false, query: "") == nil
+                        && Support.key(keyCode: 124, characters: arrow, modifiers: [], composing: true, query: "") == .clipboard(.reveal),
+                     "in a search, with Shift or while composing, the arrows stay the field's")
+        suite.expect(!Whole.overflows(textHeight: 45, shownLines: 3, lineHeight: 15)
+                        && Whole.overflows(textHeight: 60, shownLines: 3, lineHeight: 15),
+                     "« Voir plus » only when the text takes more lines than the card shows")
+        suite.expect(Whole.height(textHeight: 20, closed: 104, visible: 400) == 104,
+                     "a short dictation keeps its card's height")
+        suite.expect(Whole.height(textHeight: 150, closed: 104, visible: 400) == 150 + Whole.chrome,
+                     "the card grows to its text and the row under it")
+        suite.expect(Whole.height(textHeight: 5_000, closed: 104, visible: 400) == 400
+                        && Whole.height(textHeight: 5_000, closed: 104, visible: 60) == 104,
+                     "never taller than the list (the text scrolls inside), never under its closed height")
     }
 
     private static func routing(_ suite: TestSuite) {

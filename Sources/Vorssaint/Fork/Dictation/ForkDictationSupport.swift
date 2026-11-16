@@ -199,9 +199,41 @@ struct ForkDictationGesture {
 }
 
 enum ForkDictationSupport {
+    /// The lengths Settings offers for the longest dictation, in minutes.
+    /// Audio is kept in memory while the person speaks (about 3.8 MB a
+    /// minute), so the longest stays at one hour.
+    static let durationChoices = [5, 10, 15, 30, 60]
+    static let defaultDurationMinutes = 30
+
+    /// The chosen length in seconds. A value set elsewhere (by hand, a
+    /// backup) is kept within one minute and one hour; none means the default.
+    static func maximumDuration(minutes: Int) -> TimeInterval {
+        guard minutes > 0 else { return TimeInterval(defaultDurationMinutes * 60) }
+        return TimeInterval(min(minutes, durationChoices.last ?? 60) * 60)
+    }
+
     /// The longest dictation: a hands-free one forgotten does not keep the
-    /// microphone open.
-    static let maximumDuration: TimeInterval = 5 * 60
+    /// microphone open. Read when a dictation starts.
+    static var maximumDuration: TimeInterval {
+        maximumDuration(minutes: UserDefaults.standard.integer(forKey: ForkDefaultsKey.dictationMaxMinutes))
+    }
+
+    /// Apple recognition requests allowed in one dictation of `limit` seconds.
+    static func appleRestarts(limit: TimeInterval) -> Int {
+        max(30, Int((limit / 60).rounded(.up)) * 4)
+    }
+
+    /// How long transcribing a kept recording again may take: two minutes,
+    /// or as long as the recording itself for a longer one.
+    static func retranscribeTimeout(duration: TimeInterval) -> TimeInterval {
+        max(120, duration.isFinite ? duration : 0)
+    }
+
+    /// Samples reserved up front at each start: the first minute, the rest
+    /// grows as it is spoken instead of reserving the whole limit.
+    static func reservedSamples(sampleRate: Double, limit: TimeInterval) -> Int {
+        Int(sampleRate * min(limit, 60))
+    }
     /// How long the recognizer may take to settle once the person stops.
     static let finishTimeout: TimeInterval = 4
 

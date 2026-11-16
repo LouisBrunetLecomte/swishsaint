@@ -12,6 +12,26 @@ enum ForkDictationTests {
         text(suite)
         vocabulary(suite)
         otherInput(suite)
+        duration(suite)
+    }
+
+    private static func duration(_ suite: TestSuite) {
+        typealias Support = ForkDictationSupport
+        suite.expect(Support.durationChoices == [5, 10, 15, 30, 60] && Support.defaultDurationMinutes == 30
+                        && ForkDefaults.registered[ForkDefaultsKey.dictationMaxMinutes] as? Int == 30,
+                     "a dictation may last 5 to 60 minutes, 30 by default (5 before)")
+        suite.expect(Support.maximumDuration(minutes: 10) == 600 && Support.maximumDuration(minutes: 60) == 3_600,
+                     "the chosen length, in seconds")
+        suite.expect(Support.maximumDuration(minutes: 0) == 1_800 && Support.maximumDuration(minutes: -3) == 1_800
+                        && Support.maximumDuration(minutes: 600) == 3_600 && Support.maximumDuration(minutes: 7) == 420,
+                     "a missing value means the default, a value set by hand stays within an hour, never no limit")
+        suite.expect(Support.appleRestarts(limit: 300) == 30 && Support.appleRestarts(limit: 3_600) == 240,
+                     "Apple recognition may reopen its requests for the whole length chosen")
+        suite.expect(Support.retranscribeTimeout(duration: 30) == 120 && Support.retranscribeTimeout(duration: 1_800) == 1_800,
+                     "transcribing a long recording again gets as long as the recording")
+        suite.expect(Support.reservedSamples(sampleRate: 16_000, limit: 3_600) == 960_000
+                        && Support.reservedSamples(sampleRate: 16_000, limit: 30) == 480_000,
+                     "a start reserves the first minute at most, not the whole limit")
     }
 
     private static func otherInput(_ suite: TestSuite) {
