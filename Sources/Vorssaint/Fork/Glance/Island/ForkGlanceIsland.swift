@@ -55,7 +55,7 @@ enum ForkGlanceIsland {
     // MARK: Notices
 
     /// The last notice the island took from Glance: a click on it opens the
-    /// section (seam `notch-glance9`).
+    /// section (seam `notch-notice-activate`).
     private static var lastShown: NotchNotice?
 
     /// Shows `notice` if its switch (`fork.glance.notice.<kind>`) is on, with
@@ -112,8 +112,7 @@ enum ForkGlanceIsland {
 
     /// The island's own settings for Glance: its Content tab, on the section.
     static func openIslandSettings() {
-        SettingsRouter.shared.notchModule = .glance
-        SettingsRouter.shared.request(FeatureSettingsDestination(.notch))
+        SettingsRouter.shared.request(FeatureSettingsDestination(notch: .module(.glance)))
     }
 
     /// The Glance Focus page, for what the island does not hold.

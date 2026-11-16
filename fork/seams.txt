@@ -11,7 +11,7 @@ backup         Sources/Vorssaint/Services/SettingsBackup.swift                # 
 feedback       Sources/Vorssaint/Services/Feedback/FeedbackService.swift      # n'envoie pas nos rapports de bug au dev officiel
 settings       Sources/Vorssaint/UI/Settings/FeatureVisibilitySupport.swift   # pages du fork : déclare « Extras » et les pages des features (.fork(id))
 settings2      Sources/Vorssaint/UI/Settings/SettingsView.swift               # pages du fork : affiche « Extras » et chaque page de feature
-settings3      Sources/Vorssaint/UI/Settings/SettingsDirectory.swift          # page « Extras » : sa ligne dans la barre latérale et la recherche
+settings3      Sources/Vorssaint/UI/Settings/SettingsDirectory.swift          # page « Extras » : sa ligne dans la barre latérale et la recherche ; crochet SettingsDirectoryItem.forkSections posé par ForkBootstrap (searchItems est extrait par les tests officiels)
 settings4      Sources/Vorssaint/UI/Settings/SettingsDirectory.swift          # pages des features du fork : leur ligne dans la barre latérale et la recherche
 window-layout  Sources/Vorssaint/Services/WindowLayout/WindowLayoutService.swift  # gestes du trackpad : suivent chaque synchro et chaque arrêt de Disposition des fenêtres
 dictation-history  Sources/Vorssaint/Services/Clipboard/ClipboardHistoryService.swift  # dictée : chaque transcription entre dans l'historique du presse-papiers, avec l'app comme source (promote est privé)
@@ -19,7 +19,8 @@ notch-dictations   Sources/Vorssaint/UI/Notch/NotchView.swift                  #
 notch-dictation    Sources/Vorssaint/Services/Notch/NotchSupport.swift         # dictée : bouton « Dictées » des contrôles de l'île (cas et disponibilité injectée) — ne nomme aucun type du fork (TEST_SOURCES)
 notch-dictation2   Sources/Vorssaint/Services/Notch/NotchSupport.swift         # dictée : bouton « Dictées » (symbole, réglage requis, disponibilité) — ne nomme aucun type du fork (TEST_SOURCES)
 notch-dictation3   Sources/Vorssaint/UI/Notch/NotchControlsView.swift          # dictée : tuile et titre du bouton « Dictées » dans les contrôles de l'île
-notch-dictation4   Sources/Vorssaint/Services/Notch/NotchService.swift         # dictée : bouton rapide « Dictées » ; clic sur la notice d'une dictée → onglet Dictées
+notch-dictation4   Sources/Vorssaint/Services/Notch/NotchService.swift         # dictée : bouton rapide « Dictées » (le clic sur sa notice passe par notch-notice-activate)
+notch-notice-activate Sources/Vorssaint/Services/Notch/NotchService.swift      # clic sur une notice du fork (dictée, réunion, sauvegarde, regard) : crochet NotchNotice.forkActivate posé par ForkBootstrap (activateNotice est extrait par les tests officiels)
 notch-dictation5   Sources/Vorssaint/UI/Settings/NotchSettings.swift           # dictée : raison et lien du bouton « Dictées » tant que la Dictée est coupée (sinon la règle officielle de la page Presse-papiers)
 notch-dictation6   Sources/Vorssaint/Services/Clipboard/ClipboardHistoryService.swift  # dictée : raccourci et menu de l'historique du presse-papiers sur l'onglet Dictées → reviennent à l'onglet Presse-papiers (showClipboard est extrait par les tests officiels)
 notch-dictation7   Sources/Vorssaint/Services/Notch/NotchService.swift         # dictée : Explorer et les boutons qui choisissent la page Presse-papiers montrent son onglet Presse-papiers (après le guard de select)
@@ -44,7 +45,6 @@ notch-meetings5    Sources/Vorssaint/UI/Notch/NotchView.swift                  #
 notch-meetings6    Sources/Vorssaint/UI/Settings/NotchContentEditor.swift      # réunions : l'aperçu de la page et sa couleur dans l'onglet Contenu
 notch-meetings7    Sources/Vorssaint/UI/Settings/NotchSettings.swift           # réunions : options de la section (Contenu), pas d'AppFeature, et lien vers Extras tant que Réunions est coupé
 notch-meetings8    Sources/Vorssaint/UI/Settings/NotchSettings.swift           # réunions : carte « Réunions » de l'onglet Activité (la réunion dans l'île fermée)
-notch-meetings9    Sources/Vorssaint/Services/Notch/NotchService.swift         # réunions : un clic sur la notice d'une réunion ouvre la section Réunions
 notch-calendar-crm   Sources/Vorssaint/Services/Notch/NotchCalendarService.swift  # calendrier de l'île : chaque lecture reçoit les RDV du CRM (fusionnés, sans doublon) ; le compte à rebours et la tuile les voient aussi
 notch-calendar-crm2  Sources/Vorssaint/UI/Notch/NotchCalendarView.swift          # calendrier de l'île : la carte d'un RDV avec visio ou du CRM (Rejoindre, Copier le lien, menu) — hors de NotchCalendarEventRow, extrait par generate_sources.py
 notch-calendar-crm3  Sources/Vorssaint/UI/Settings/NotchSettings.swift          # calendrier de l'île : réglage « Afficher les RDV du CRM » dans Contenu › Calendrier (seulement avec un CRM importé)
@@ -61,7 +61,6 @@ notch-macbackups5    Sources/Vorssaint/UI/Notch/NotchView.swift                 
 notch-macbackups6    Sources/Vorssaint/UI/Settings/NotchContentEditor.swift     # sauvegarde : l'aperçu de la page et sa couleur (sarcelle) dans l'onglet Contenu
 notch-macbackups7    Sources/Vorssaint/UI/Settings/NotchSettings.swift          # sauvegarde : options de la section (Contenu), pas d'AppFeature, et lien vers sa page tant que la feature est coupée
 notch-macbackups8    Sources/Vorssaint/UI/Settings/NotchSettings.swift          # sauvegarde : carte « Sauvegarde du Mac » de l'onglet Activité (île fermée, aile droite, notices de fin)
-notch-macbackups9    Sources/Vorssaint/Services/Notch/NotchService.swift        # sauvegarde : un clic sur la notice d'une fin de sauvegarde ouvre la section
 notch-macbackup      Sources/Vorssaint/Services/Notch/NotchSupport.swift        # sauvegarde : activité « Sauvegarde » de l'île fermée (cas et crochets : titre, ordre, aile) — ne nomme aucun type du fork (TEST_SOURCES)
 notch-macbackup2     Sources/Vorssaint/Services/Notch/NotchSupport.swift        # sauvegarde : titre et page (la section) de l'activité — ne nomme aucun type du fork (TEST_SOURCES)
 notch-macbackup3     Sources/Vorssaint/Services/Notch/NotchService.swift        # sauvegarde : sa place parmi les activités (après les téléchargements, par le crochet : compactActivities est extrait) et ses ailes
@@ -91,7 +90,6 @@ notch-glance5        Sources/Vorssaint/UI/Notch/NotchView.swift                 
 notch-glance6        Sources/Vorssaint/UI/Settings/NotchContentEditor.swift     # focus au regard : l'aperçu de la page et sa couleur (indigo) dans l'onglet Contenu
 notch-glance7        Sources/Vorssaint/UI/Settings/NotchSettings.swift          # focus au regard : options de la section (Contenu), pas d'AppFeature, et lien vers sa page tant que la feature est coupée
 notch-glance8        Sources/Vorssaint/UI/Settings/NotchSettings.swift          # focus au regard : carte « Focus au regard » de l'onglet Activité (île fermée, notices)
-notch-glance9        Sources/Vorssaint/Services/Notch/NotchService.swift        # focus au regard : un clic sur une notice du regard ouvre la section
 notch-glance-activity   Sources/Vorssaint/Services/Notch/NotchSupport.swift     # focus au regard : activité « Regard » de l'île fermée (cas et crochets : titre, ordre, aile) — ne nomme aucun type du fork (TEST_SOURCES)
 notch-glance-activity2  Sources/Vorssaint/Services/Notch/NotchSupport.swift     # focus au regard : titre et page (la section) de l'activité — ne nomme aucun type du fork (TEST_SOURCES)
 notch-glance-activity3  Sources/Vorssaint/Services/Notch/NotchService.swift     # focus au regard : sa place parmi les activités (avant Rester éveillé, par le crochet : compactActivities est extrait) et ses ailes

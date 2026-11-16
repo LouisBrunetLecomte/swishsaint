@@ -119,8 +119,7 @@ struct ForkMeetingIslandSettingsLink: View {
 
     var body: some View {
         Button(ForkMeetingIslandStrings.strings(l10n.language).islandSettingsLink) {
-            SettingsRouter.shared.notchModule = .meetings
-            SettingsRouter.shared.request(FeatureSettingsDestination(.notch))
+            SettingsRouter.shared.request(FeatureSettingsDestination(notch: .module(.meetings)))
         }
         .controlSize(.small)
     }

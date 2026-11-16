@@ -46,7 +46,7 @@ enum ForkMacBackupIsland {
     // MARK: Notices
 
     /// The last notice the island took from Mac Backup: a click on it opens
-    /// the section (seam `notch-macbackups9`).
+    /// the section (seam `notch-notice-activate`).
     private static var lastShown: NotchNotice?
 
     /// Whether the closed island is free for a notice or a card now.
@@ -152,8 +152,7 @@ enum ForkMacBackupIsland {
     /// The island's own settings for Mac Backup: its Content tab, on the
     /// Backup section.
     static func openIslandSettings() {
-        SettingsRouter.shared.notchModule = .macBackup
-        SettingsRouter.shared.request(FeatureSettingsDestination(.notch))
+        SettingsRouter.shared.request(FeatureSettingsDestination(notch: .module(.macBackup)))
     }
 
     /// The Mac Backup settings page, for what the island does not hold.

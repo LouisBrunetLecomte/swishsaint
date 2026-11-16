@@ -260,7 +260,7 @@ Toutes déclarées dans `fork/seams.txt` (bloc « Focus au regard ») ; aucune d
 | `glance-mru` | `Services/Switcher/WindowUseTracker.swift` | `forkDemand` + en tête de `syncWithFeatures` : le traqueur officiel des fenêtres récentes tourne aussi pour Glance (D4) |
 | `settings4` (id existant, +1 ligne) | `UI/Settings/SettingsDirectory.swift` | la ligne « Focus au regard » de la barre latérale, juste après les gestes |
 | `bootstrap` (existant, 0 ligne) | `App/AppDelegate.swift` | `ForkBootstrap.start()` est du code du fork |
-| `notch-glance` … `notch-glance9` | `NotchSupport`, `NotchEditorStrings`, `NotchView`, `NotchContentEditor`, `NotchSettings`, `NotchService` | section « Regard » : cas et crochets injectés, symbole `eyes`, ⌥⌘L, hauteur, ligne du Contenu, page et titre, aperçu et teinte indigo, options Contenu, carte Activité, clic sur une notice |
+| `notch-glance` … `notch-glance8`, `notch-notice-activate` | `NotchSupport`, `NotchEditorStrings`, `NotchView`, `NotchContentEditor`, `NotchSettings`, `NotchService` | section « Regard » : cas et crochets injectés, symbole `eyes`, ⌥⌘L, hauteur, ligne du Contenu, page et titre, aperçu et teinte indigo, options Contenu, carte Activité, clic sur une notice |
 | `notch-glance-activity` … `-activity8` | `NotchSupport`, `NotchService`, `NotchView`, `NotchMirrorView`, `NotchTimerStrip`, `NotchCapsuleViews` | activité de l'île fermée (ordre avant Rester éveillé, ailes, capsule, miroirs, switch exhaustifs) |
 | `notch-glance-tile` … `-tile5` | `NotchSupport`, `NotchControlsView`, `NotchService`, `NotchSettings` | tuile et bouton « Regard » |
 | `notch-glance-event` … `-event3` | `NotchSupport` | `NotchEvent.glance` : clé, priorité 1, 4 s, routage |

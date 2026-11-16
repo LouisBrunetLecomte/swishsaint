@@ -92,7 +92,7 @@ Réunions, 17 lignes ajoutées et 1 modifiée dans 6 fichiers officiels (les lig
 | `notch-meetings6` | `UI/Settings/NotchContentEditor.swift` : `NotchPagePreview` et `settingsTint` | l'aperçu, la couleur |
 | `notch-meetings7` | `UI/Settings/NotchSettings.swift` : `moduleOptions`, `moduleFeature`, bouton de l'en-tête | les options, `return nil` (pas d'`AppFeature`), le lien vers la page Réunions (son interrupteur) quand la feature est coupée |
 | `notch-meetings8` | idem : `activityPage` | la carte de l'onglet Activité |
-| `notch-meetings9` | `Services/Notch/NotchService.swift` : `activateNotice` | un clic sur la notice ouvre la section |
+| `notch-notice-activate` | `Services/Notch/NotchService.swift` : `activateNotice` | un clic sur la notice ouvre la section (crochet `NotchNotice.forkActivate`, posé par `ForkBootstrap`) |
 | `notch-meeting2` (modifiée) | `Services/Notch/NotchSupport.swift` : `NotchCompactActivity.module` | `case .meeting: return .meetings` : un survol de l'île fermée pendant l'enregistrement ouvre la section |
 
 Ce qui vient **sans couture** une fois le cas ajouté : la tuile de la grille Explorer (`NotchSectionsView`, titre, symbole,
@@ -137,7 +137,7 @@ visible par défaut.
 
 - Notice : `NotchService.shared.show(NotchNotice(event: .capture, …))` ; elle suit l'interrupteur officiel de son
   `NotchEvent` (onglet Activité, carte « Captures » pour `.capture`) et `NotchEvent.duration` (12 s pour `.capture`).
-  Garde la dernière notice montrée pour reconnaître un clic (`ForkMeetingIsland.activate`, couture `notch-meetings9`).
+  Garde la dernière notice montrée pour reconnaître un clic (`ForkMeetingIsland.activate`, couture `notch-notice-activate`).
 - Carte : `NotchService.presentCapture(id:content:actions:height:takeFocus: false, closeOnCollapse: true, …)` ; mesure sa
   hauteur à la largeur de l'île (`ForkMeetingIsland.height(of:)`), rends le clavier après un bouton qui la laisse ouverte
   (`resignPanelKey`).
@@ -158,7 +158,7 @@ lectures du menu latéral et de la recherche ; `SettingsDirectory.sections` rest
 - **Compagnon** : rien.
 - **Un seul réglage, plusieurs endroits** : la même clé `fork.<feature>.*` lue par chaque vue (`@AppStorage`), jamais une
   copie. Chaque endroit mène aux autres : `ForkSettingsPages.open(.feature)` vers la page de la feature,
-  `SettingsRouter.shared.notchModule = .x` + `request(FeatureSettingsDestination(.notch))` vers l'onglet Contenu de l'île
+  `SettingsRouter.shared.request(FeatureSettingsDestination(notch: .module(.x)))` vers l'onglet Contenu de l'île
   sur la section.
 
 ## 3. Le design d'une page
