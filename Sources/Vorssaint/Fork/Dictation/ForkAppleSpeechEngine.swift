@@ -25,8 +25,10 @@ final class ForkAppleSpeechEngine: ForkDictationEngine {
     /// How long the recognizer may take to settle once the person stops.
     static let finishTimeout: TimeInterval = 4
     /// Requests reopened in one dictation before giving up on the rest: a
-    /// recognizer that fails at once would otherwise loop.
-    static let maximumRestarts = 30
+    /// recognizer that fails at once would otherwise loop. A request lasts
+    /// about a minute at most, so the allowance follows the chosen length
+    /// (four per minute, never under 30) instead of ending a long dictation early.
+    static var maximumRestarts: Int { ForkDictationSupport.appleRestarts(limit: ForkDictationSupport.maximumDuration) }
     /// A request that failed for real is tried again after this pause, at
     /// most this many times in a row, before the dictation ends on what was
     /// understood: the network may come back, a dead recognizer will not.
