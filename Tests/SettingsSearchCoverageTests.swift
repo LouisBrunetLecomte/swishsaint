@@ -157,6 +157,7 @@ enum SettingsSearchCoverageTests {
         func settingsSources() -> [SwiftSource] {
             Self.swiftFiles(in: sourceRoot).compactMap { path in
                 guard !path.contains("/UI/MenuPanel/"), !path.hasSuffix("/SettingsCard.swift"),
+                      !path.contains("/Vorssaint/Fork/"), // FORK(tests-settings-search)
                       let text = try? String(contentsOfFile: path, encoding: .utf8),
                       components.contains(where: { text.contains($0 + "(") }) else { return nil }
                 return SwiftSource(path: path, text: text)
