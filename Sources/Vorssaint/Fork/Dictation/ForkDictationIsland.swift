@@ -38,7 +38,7 @@ enum ForkDictationIsland {
     /// The last notice dictation sent, to tell it from the microphone's own.
     private static var lastShown: NotchNotice?
 
-    /// A click on the island's notice (seam `notch-dictation4`): the final
+    /// A click on the island's notice (seam `notch-notice-activate`): the final
     /// step of a dictation kept in the history opens it in the island's
     /// Dictations tab. False for any other notice, which the island handles.
     static func activate(_ notice: NotchNotice) -> Bool {

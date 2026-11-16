@@ -28,8 +28,7 @@ struct ForkGlanceSettingsView: View {
     /// The « Dynamic Island » row (plan §11.6, §12.9): the island's settings,
     /// on the Glance module.
     static func openIslandSettings() {
-        SettingsRouter.shared.notchModule = .glance
-        SettingsRouter.shared.request(FeatureSettingsDestination(.notch))
+        SettingsRouter.shared.request(FeatureSettingsDestination(notch: .module(.glance)))
     }
 }
 

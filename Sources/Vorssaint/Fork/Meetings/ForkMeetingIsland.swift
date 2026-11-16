@@ -46,7 +46,7 @@ enum ForkMeetingIsland {
     }
 
     /// The last notice the island took from a meeting: a click on it opens
-    /// the island's Meetings section (seam `notch-meetings9`).
+    /// the island's Meetings section (seam `notch-notice-activate`).
     private static var lastShown: NotchNotice?
 
     /// A click on a meeting's notice in the closed island opens the
